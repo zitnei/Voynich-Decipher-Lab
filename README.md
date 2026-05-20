@@ -1,9 +1,16 @@
-# Voynich Verified Translation Engine
+# Voynich Scientific Decipherment Platform
 
-A free, browser-based experimental research tool for testing translation hypotheses related to the Voynich Manuscript.
+A reproducible research platform for testing whether proposed Voynich translation rules remain consistent across independent manuscript pages.
 
-This project does not claim that the Voynich Manuscript has been solved.  
-It is designed to help generate, test, compare, and export reproducible translation-rule hypotheses.
+This project does **not** claim a confirmed translation.  
+It is designed to move toward a scientifically testable decipherment workflow:
+
+- propose translation rules
+- apply them to independent pages
+- detect contradictions
+- calculate reproducibility
+- export JSON research logs
+- generate a paper-style report
 
 ## Features
 
@@ -16,8 +23,9 @@ It is designed to help generate, test, compare, and export reproducible translat
 - Hypothesis verification
 - Reproducibility scoring
 - Contradiction detection
-- Verified candidate rule storage
-- JSON research export
+- Falsifiability checklist
+- Paper-style research report export
+- JSON research log export
 
 ## Local Development
 
@@ -32,6 +40,11 @@ Open:
 http://localhost:3000
 ```
 
-## Deploy
+## Deployment
 
-Push to GitHub. Vercel will redeploy automatically if the repository is connected.
+Push to GitHub. If connected to Vercel, production redeploys automatically.
+
+## Research Notice
+
+The Voynich Manuscript remains undeciphered.  
+This tool is an experimental verification platform, not a certified translation system.
