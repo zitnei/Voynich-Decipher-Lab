@@ -1,20 +1,23 @@
-# Voynich Decipher Lab
+# Voynich Verified Translation Engine
 
-Free, browser-only research tool for testing hypotheses about the Voynich Manuscript.
+A free, browser-based experimental research tool for testing translation hypotheses related to the Voynich Manuscript.
 
-No OpenAI API key is required.  
-All analysis runs in the user's browser using JavaScript, Canvas, EVA-like token rules, word frequency analysis, cross-page comparison, and rule-based hypothesis generation.
+This project does not claim that the Voynich Manuscript has been solved.  
+It is designed to help generate, test, compare, and export reproducible translation-rule hypotheses.
 
 ## Features
 
 - Manuscript image upload
-- Browser-side visual analysis
-- EVA-like transcription assistance
+- Browser-based visual analysis
+- EVA-like token generation
 - Word frequency analysis
-- Cross-page comparison using localStorage
+- Cross-page comparison
 - Translation rule generation
 - Hypothesis verification
-- Reproduction test on another page
+- Reproducibility scoring
+- Contradiction detection
+- Verified candidate rule storage
+- JSON research export
 
 ## Local Development
 
@@ -31,9 +34,4 @@ http://localhost:3000
 
 ## Deploy
 
-Push to GitHub. Vercel will redeploy automatically.
-
-## Important Notice
-
-The Voynich Manuscript remains undeciphered.  
-This app does not provide confirmed translations. It generates testable hypotheses and reproducibility scores.
+Push to GitHub. Vercel will redeploy automatically if the repository is connected.

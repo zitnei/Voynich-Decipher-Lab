@@ -1,377 +1,296 @@
-'use client'
+'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react'
-
-type PageRecord = {
-  id: string
-  category: string
-  notes: string
-  eva: string
-  tokens: string[]
-  freq: Record<string, number>
-  imageStats: ImageStats | null
-  rules: Rule[]
-  createdAt: string
-}
-
-type ImageStats = {
-  brightness: number
-  contrast: number
-  warmInkRatio: number
-  edgeDensity: number
-  estimatedType: string
-}
+import { useMemo, useState } from 'react';
 
 type Rule = {
-  token: string
-  meaning: string
-  reason: string
-  confidence: number
-}
+  token: string;
+  meaning: string;
+  confidence: number;
+  reason: string;
+};
 
-const sampleEva = `qokedy qokedy dal qokain shedy
-olchedy qokeedy qokedy ykar
-chedy qokaiin otol dain
-qokedy shedy qokedy ar al`
+type Analysis = {
+  tokenCount: number;
+  uniqueCount: number;
+  avgLength: number;
+  repeatedRate: number;
+  brightness: number;
+  density: number;
+  pageType: string;
+};
 
-const categories = [
-  '植物・薬草ページ',
-  '星図・暦ページ',
-  '生物・人体ページ',
-  '薬学・容器ページ',
-  '不明ページ',
-]
+const tokenBank = [
+  'qokedy', 'chedy', 'shedy', 'dain', 'ol', 'ar', 'aiin', 'qokeey',
+  'otol', 'daiin', 'chol', 'yteedy', 'qotedy', 'okeody', 'sar', 'dor'
+];
 
 const meaningBank: Record<string, string[]> = {
-  '植物・薬草ページ': ['root marker', 'leaf reference', 'plant preparation', 'growth cycle', 'herbal mixture'],
-  '星図・暦ページ': ['calendar marker', 'lunar cycle', 'seasonal period', 'star group', 'ritual date'],
-  '生物・人体ページ': ['body marker', 'flow reference', 'bath section', 'figure group', 'anatomical relation'],
-  '薬学・容器ページ': ['container label', 'dose marker', 'compound step', 'storage note', 'mixture relation'],
-  '不明ページ': ['section marker', 'repeated label', 'unknown noun', 'relation marker', 'context token'],
-}
+  botanical: ['root marker', 'leaf structure', 'plant preparation', 'water extraction', 'seasonal growth'],
+  astronomical: ['lunar marker', 'calendar cycle', 'star grouping', 'phase transition', 'celestial count'],
+  biological: ['body region', 'fluid pathway', 'thermal bath', 'repetition marker', 'human cluster'],
+  pharmaceutical: ['container marker', 'herbal mixture', 'dose unit', 'storage note', 'preparation step'],
+  unknown: ['context marker', 'repeated unit', 'section divider', 'semantic anchor', 'measurement term']
+};
 
 function tokenize(text: string) {
   return text
     .toLowerCase()
     .replace(/[^a-z\s]/g, ' ')
     .split(/\s+/)
-    .filter(Boolean)
+    .filter(Boolean);
 }
 
 function frequency(tokens: string[]) {
-  return tokens.reduce<Record<string, number>>((acc, token) => {
-    acc[token] = (acc[token] ?? 0) + 1
-    return acc
-  }, {})
+  const map = new Map<string, number>();
+  tokens.forEach((t) => map.set(t, (map.get(t) || 0) + 1));
+  return Array.from(map.entries())
+    .map(([token, count]) => ({ token, count }))
+    .sort((a, b) => b.count - a.count);
 }
 
-function generateEvaLike(stats: ImageStats | null, category: string) {
-  const base = category.includes('星')
-    ? ['qokedy', 'shedy', 'dal', 'qokain', 'olchedy', 'dain']
-    : category.includes('植物')
-    ? ['qokedy', 'chedy', 'ol', 'qokeedy', 'ykar', 'shol']
-    : category.includes('薬')
-    ? ['qokain', 'dain', 'otol', 'shedy', 'qokedy', 'ar']
-    : ['qokedy', 'shedy', 'olchedy', 'qokeedy', 'dain', 'ykar']
-
-  const density = stats ? Math.max(3, Math.min(8, Math.round(stats.edgeDensity * 14))) : 5
-  const lines: string[] = []
-  for (let i = 0; i < 4; i++) {
-    const words = []
-    for (let j = 0; j < density; j++) {
-      words.push(base[(i + j + Math.floor((stats?.brightness ?? 90) / 30)) % base.length])
-    }
-    lines.push(words.join(' '))
+function generateEvaLike(seed: number, count = 44) {
+  const out: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const idx = Math.abs(Math.floor((seed * (i + 7) + i * 13) % tokenBank.length));
+    out.push(tokenBank[idx]);
   }
-  return lines.join('\n')
+  return out.join(' ');
 }
 
-function makeRules(freq: Record<string, number>, category: string, notes: string): Rule[] {
-  const meanings = meaningBank[category] ?? meaningBank['不明ページ']
-  return Object.entries(freq)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 8)
-    .map(([token, count], index) => {
-      const confidence = Math.min(86, 38 + count * 8 + (notes.length > 12 ? 6 : 0) + (category !== '不明ページ' ? 7 : 0) - index * 2)
-      return {
-        token,
-        meaning: meanings[index % meanings.length],
-        confidence,
-        reason: `${token} は ${count} 回出現。ページ分類「${category}」と画像メモから、${meanings[index % meanings.length]} の候補として扱う。`,
+function buildRules(tokens: string[], pageType: string): Rule[] {
+  const freq = frequency(tokens).slice(0, 8);
+  const meanings = meaningBank[pageType] || meaningBank.unknown;
+  return freq.map((f, index) => {
+    const base = Math.min(94, 42 + f.count * 9 + Math.max(0, 8 - index) * 3);
+    return {
+      token: f.token,
+      meaning: meanings[index % meanings.length],
+      confidence: base,
+      reason: `Appears ${f.count} time(s), ranked #${index + 1}, and matches ${pageType} page context.`
+    };
+  });
+}
+
+function verifyRules(rules: Rule[], targetTokens: string[]) {
+  const targetSet = new Set(targetTokens);
+  const results = rules.map((rule) => {
+    const exists = targetSet.has(rule.token);
+    return {
+      ...rule,
+      reproduced: exists,
+      verificationScore: exists ? Math.min(99, rule.confidence + 4) : Math.max(12, rule.confidence - 35)
+    };
+  });
+  const reproduced = results.filter((r) => r.reproduced).length;
+  const score = rules.length ? Math.round((reproduced / rules.length) * 100) : 0;
+  return { results, score, contradictions: results.filter((r) => !r.reproduced) };
+}
+
+export default function Page() {
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageName, setImageName] = useState('');
+  const [pageType, setPageType] = useState('botanical');
+  const [evaText, setEvaText] = useState('qokedy qokedy shedy dain ol qokeedy shedy aiin qokedy chol dain');
+  const [comparisonText, setComparisonText] = useState('shedy dain qokedy aiin chol qotedy dain ol shedy');
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
+
+  const tokens = useMemo(() => tokenize(evaText), [evaText]);
+  const comparisonTokens = useMemo(() => tokenize(comparisonText), [comparisonText]);
+  const freq = useMemo(() => frequency(tokens), [tokens]);
+  const rules = useMemo(() => buildRules(tokens, pageType), [tokens, pageType]);
+  const verification = useMemo(() => verifyRules(rules, comparisonTokens), [rules, comparisonTokens]);
+
+  function handleImage(file?: File) {
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setImageUrl(url);
+    setImageName(file.name);
+
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const w = 180;
+      const h = Math.max(1, Math.round((img.height / img.width) * w));
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.drawImage(img, 0, 0, w, h);
+      const data = ctx.getImageData(0, 0, w, h).data;
+
+      let brightness = 0;
+      let darkPixels = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        const v = (data[i] + data[i + 1] + data[i + 2]) / 3;
+        brightness += v;
+        if (v < 130) darkPixels++;
       }
-    })
-}
+      const pixels = data.length / 4;
+      const avgBrightness = Math.round(brightness / pixels);
+      const density = Math.round((darkPixels / pixels) * 100);
+      const seed = avgBrightness + density + file.name.length;
+      const generated = generateEvaLike(seed, Math.max(32, Math.min(90, density + 24)));
+      setEvaText(generated);
 
-function verifyRules(tokens: string[], rules: Rule[], category: string, previousPages: PageRecord[]) {
-  if (!rules.length) return { score: 0, text: 'ルールがまだありません。EVAテキストを入れて解析してください。' }
-  const tokenSet = new Set(tokens)
-  const matched = rules.filter(rule => tokenSet.has(rule.token))
-  const base = Math.round((matched.length / rules.length) * 100)
-  const sameCategoryPages = previousPages.filter(p => p.category === category)
-  const categoryBonus = sameCategoryPages.length ? 8 : 0
-  const score = Math.min(94, base + categoryBonus)
-  const text = matched.length
-    ? `生成ルール ${rules.length} 個中 ${matched.length} 個がこのページで再出現。別ページでも同じ語が同じ分類で出るかを見ることで、仮説の再現性を検証できます。`
-    : '生成したルールがこのページでは再出現していません。仮説として弱い可能性があります。'
-  return { score, text }
-}
-
-function comparePages(current: PageRecord | null, pages: PageRecord[]) {
-  if (!current || !pages.length) return []
-  const currentSet = new Set(current.tokens)
-  return pages
-    .filter(p => p.id !== current.id)
-    .map(page => {
-      const shared = page.tokens.filter(t => currentSet.has(t))
-      const uniqueShared = Array.from(new Set(shared))
-      const similarity = Math.round((uniqueShared.length / Math.max(1, new Set([...current.tokens, ...page.tokens]).size)) * 100)
-      return { page, shared: uniqueShared, similarity }
-    })
-    .sort((a, b) => b.similarity - a.similarity)
-    .slice(0, 5)
-}
-
-export default function Home() {
-  const [imageUrl, setImageUrl] = useState('')
-  const [imageSrc, setImageSrc] = useState('')
-  const [category, setCategory] = useState(categories[0])
-  const [notes, setNotes] = useState('植物のような図、根、葉、円形ラベル')
-  const [eva, setEva] = useState(sampleEva)
-  const [imageStats, setImageStats] = useState<ImageStats | null>(null)
-  const [pages, setPages] = useState<PageRecord[]>([])
-  const canvasRef = useRef<HTMLCanvasElement | null>(null)
-
-  useEffect(() => {
-    const saved = localStorage.getItem('voynich-pages')
-    if (saved) setPages(JSON.parse(saved))
-  }, [])
-
-  useEffect(() => {
-    localStorage.setItem('voynich-pages', JSON.stringify(pages))
-  }, [pages])
-
-  const tokens = useMemo(() => tokenize(eva), [eva])
-  const freq = useMemo(() => frequency(tokens), [tokens])
-  const rules = useMemo(() => makeRules(freq, category, notes), [freq, category, notes])
-
-  const current: PageRecord = useMemo(() => ({
-    id: 'current',
-    category,
-    notes,
-    eva,
-    tokens,
-    freq,
-    imageStats,
-    rules,
-    createdAt: new Date().toISOString(),
-  }), [category, notes, eva, tokens, freq, imageStats, rules])
-
-  const verification = useMemo(() => verifyRules(tokens, rules, category, pages), [tokens, rules, category, pages])
-  const comparisons = useMemo(() => comparePages(current, pages), [current, pages])
-
-  function handleUrl() {
-    if (!imageUrl.trim()) return
-    setImageSrc(imageUrl.trim())
+      setAnalysis({
+        tokenCount: tokenize(generated).length,
+        uniqueCount: frequency(tokenize(generated)).length,
+        avgLength: 5.4,
+        repeatedRate: Math.min(96, Math.round(density * 1.2)),
+        brightness: avgBrightness,
+        density,
+        pageType
+      });
+    };
+    img.src = url;
   }
 
-  function handleFile(file: File | null) {
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => setImageSrc(String(reader.result))
-    reader.readAsDataURL(file)
+  function exportJson() {
+    const payload = {
+      project: 'Voynich Verified Translation Engine',
+      notice: 'Experimental hypothesis research output. Not a confirmed translation.',
+      imageName,
+      pageType,
+      evaText,
+      analysis,
+      frequency: freq,
+      generatedRules: rules,
+      verification
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'voynich-research-log.json';
+    a.click();
+    URL.revokeObjectURL(url);
   }
-
-  function analyzeImage(img: HTMLImageElement) {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    const size = 240
-    canvas.width = size
-    canvas.height = size
-    ctx.drawImage(img, 0, 0, size, size)
-    const data = ctx.getImageData(0, 0, size, size).data
-
-    let total = 0
-    let totalSq = 0
-    let warmInk = 0
-    let edge = 0
-
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i]
-      const g = data[i + 1]
-      const b = data[i + 2]
-      const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
-      total += lum
-      totalSq += lum * lum
-      if (r > g && g > b && lum < 190) warmInk++
-      if (i > 4) {
-        const prev = 0.2126 * data[i - 4] + 0.7152 * data[i - 3] + 0.0722 * data[i - 2]
-        if (Math.abs(lum - prev) > 38) edge++
-      }
-    }
-
-    const pixels = data.length / 4
-    const brightness = total / pixels
-    const variance = totalSq / pixels - brightness * brightness
-    const contrast = Math.sqrt(Math.max(0, variance))
-    const warmInkRatio = warmInk / pixels
-    const edgeDensity = edge / pixels
-
-    let estimatedType = '不明ページ'
-    if (edgeDensity > 0.16 && warmInkRatio > 0.08) estimatedType = '植物・薬草ページ'
-    if (contrast > 62 && edgeDensity > 0.12) estimatedType = '星図・暦ページ'
-    if (warmInkRatio > 0.14 && contrast < 58) estimatedType = '薬学・容器ページ'
-
-    setImageStats({
-      brightness: Math.round(brightness),
-      contrast: Math.round(contrast),
-      warmInkRatio: Number(warmInkRatio.toFixed(3)),
-      edgeDensity: Number(edgeDensity.toFixed(3)),
-      estimatedType,
-    })
-  }
-
-  function autoEva() {
-    setEva(generateEvaLike(imageStats, category))
-  }
-
-  function savePage() {
-    const record: PageRecord = {
-      ...current,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-    }
-    setPages(prev => [record, ...prev].slice(0, 20))
-  }
-
-  function clearPages() {
-    setPages([])
-  }
-
-  const topFreq = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 10)
 
   return (
-    <main>
+    <main className="container">
       <section className="hero">
-        <div>
-          <div className="kicker">VOYNICH DECIPHER LAB</div>
-          <h1>未解読文書を、検証できる仮説にする。</h1>
-          <p className="lead">
-            OpenAI APIなし・無料で動くブラウザ解析版です。画像アップロード、簡易画像解析、EVA風変換、
-            単語頻度、他ページ比較、翻訳ルール生成、仮説検証、別ページ再現テストを行います。
-          </p>
-        </div>
-        <div className="badge">無料 / APIキー不要 / Vercel対応</div>
+        <div className="badge">Verified Translation Engine / Experimental</div>
+        <h1>Voynich Decipher Lab</h1>
+        <p className="subtitle">
+          A free browser-based research system for testing whether translation rules can survive
+          cross-page verification. It does not claim a confirmed translation; it measures whether
+          hypotheses are reproducible.
+        </p>
       </section>
 
       <section className="grid">
-        <div className="card">
-          <h2>1. 手稿画像</h2>
-          <label>画像アップロード</label>
-          <input type="file" accept="image/*" onChange={e => handleFile(e.target.files?.[0] ?? null)} />
-
-          <label>または画像URL</label>
-          <input value={imageUrl} onChange={e => setImageUrl(e.target.value)} placeholder="Yaleなどの画像URL" />
-          <button onClick={handleUrl}>URL画像を表示</button>
-
-          <div className="preview">
-            {imageSrc ? (
-              <img src={imageSrc} alt="manuscript" onLoad={e => analyzeImage(e.currentTarget)} />
-            ) : (
-              <span>ここに手稿画像が表示されます。</span>
-            )}
-          </div>
-          <canvas ref={canvasRef} style={{ display: 'none' }} />
-
-          <div className="result">
-            <h3>2. AI風 画像解析</h3>
-            {imageStats ? (
-              <div className="small">
-                明度: {imageStats.brightness} / コントラスト: {imageStats.contrast}<br />
-                インク比率: {imageStats.warmInkRatio} / 線密度: {imageStats.edgeDensity}<br />
-                推定ページ: <b>{imageStats.estimatedType}</b>
-              </div>
-            ) : <p className="small">画像を入れるとブラウザ内で解析します。</p>}
-          </div>
-        </div>
-
-        <div className="card">
-          <h2>3. EVA変換・単語頻度</h2>
-          <label>ページ分類</label>
-          <select value={category} onChange={e => setCategory(e.target.value)}>
-            {categories.map(c => <option key={c}>{c}</option>)}
+        <div className="panel">
+          <h2>1. Manuscript Image Input</h2>
+          <input type="file" accept="image/*" onChange={(e) => handleImage(e.target.files?.[0])} />
+          <select value={pageType} onChange={(e) => setPageType(e.target.value)}>
+            <option value="botanical">Botanical</option>
+            <option value="astronomical">Astronomical</option>
+            <option value="biological">Biological</option>
+            <option value="pharmaceutical">Pharmaceutical</option>
+            <option value="unknown">Unknown</option>
           </select>
-
-          <label>画像メモ</label>
-          <input value={notes} onChange={e => setNotes(e.target.value)} />
-
-          <label>EVAテキスト</label>
-          <textarea value={eva} onChange={e => setEva(e.target.value)} />
-
-          <button onClick={autoEva}>画像特徴からEVA風テキストを作る</button>
-          <button onClick={savePage}>このページを保存して比較対象にする</button>
-
-          <div className="columns">
-            <div>
-              <h3>頻出トークン</h3>
-              <table className="table">
-                <tbody>
-                  {topFreq.map(([token, count]) => (
-                    <tr key={token}><td>{token}</td><td>{count}</td></tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div>
-              <h3>保存ページ</h3>
-              <p className="score">{pages.length}</p>
-              <button onClick={clearPages}>保存ページを消す</button>
-            </div>
+          <div className="viewer">
+            {imageUrl ? <img src={imageUrl} alt="Uploaded manuscript" /> : <span className="small">Upload a manuscript image to generate EVA-like tokens.</span>}
           </div>
         </div>
 
-        <div className="card">
-          <h2>4〜8. ルール生成・検証・再現</h2>
-          <p className="small">仮説再現スコア</p>
-          <div className="score">{verification.score}%</div>
-          <p className="small">{verification.text}</p>
-
-          <div className="result">
-            <h3>翻訳ルール候補</h3>
-            {rules.map(rule => (
-              <div key={rule.token} className="token">
-                {rule.token} → {rule.meaning} / {rule.confidence}%
-              </div>
-            ))}
-          </div>
-
-          <div className="result">
-            <h3>仮説翻訳</h3>
-            <p>
-              このページは「{category}」として読み、頻出語{' '}
-              {topFreq.slice(0, 4).map(([t]) => t).join(' / ')} を中心に、
-              {rules[0]?.meaning ?? 'section marker'} と {rules[1]?.meaning ?? 'context token'} の関係を持つ記録という仮説で検証します。
-            </p>
-          </div>
-
-          <div className="result">
-            <h3>5. 他ページ比較</h3>
-            {comparisons.length ? comparisons.map(item => (
-              <div key={item.page.id} className="small" style={{ marginBottom: 12 }}>
-                類似度 {item.similarity}% / {item.page.category}<br />
-                共通語: {item.shared.slice(0, 8).join(', ') || 'なし'}
-              </div>
-            )) : <p className="small">保存ページがあると比較できます。1ページ保存 → 別ページを解析してください。</p>}
+        <div className="panel">
+          <h2>2. EVA Token Workspace</h2>
+          <textarea value={evaText} onChange={(e) => setEvaText(e.target.value)} />
+          <p className="small">
+            You can paste real EVA transcription here. If you upload an image, the browser creates an experimental EVA-like token stream.
+          </p>
+          <div className="stats">
+            <div className="stat"><strong>{tokens.length}</strong><span className="small">Tokens</span></div>
+            <div className="stat"><strong>{freq.length}</strong><span className="small">Unique</span></div>
+            <div className="stat"><strong>{analysis?.brightness ?? '-'}</strong><span className="small">Brightness</span></div>
+            <div className="stat"><strong>{analysis?.density ?? '-'}</strong><span className="small">Glyph Density</span></div>
           </div>
         </div>
       </section>
 
-      <div className="notice">
-        重要：これは確定翻訳ではありません。ヴォイニッチ手稿は未解読です。
-        このアプリは、同じルールが別ページでも再現できるかを検証するための無料ブラウザ研究ツールです。
-      </div>
+      <section className="grid" style={{ marginTop: 18 }}>
+        <div className="panel">
+          <h2>3. Word Frequency Analysis</h2>
+          <div className="list">
+            {freq.slice(0, 10).map((f) => (
+              <div className="item" key={f.token}>
+                <span>{f.token}</span>
+                <span className="score">{f.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="panel">
+          <h2>4. Translation Rule Generation</h2>
+          <div className="list">
+            {rules.map((rule) => (
+              <div className="item" key={rule.token}>
+                <span>
+                  <b>{rule.token}</b> → {rule.meaning}
+                  <br />
+                  <span className="small">{rule.reason}</span>
+                </span>
+                <span className="score">{rule.confidence}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="grid" style={{ marginTop: 18 }}>
+        <div className="panel">
+          <h2>5. Cross-Page Comparison</h2>
+          <textarea value={comparisonText} onChange={(e) => setComparisonText(e.target.value)} />
+          <div className="stats">
+            <div className="stat"><strong>{comparisonTokens.length}</strong><span className="small">Target Tokens</span></div>
+            <div className="stat"><strong>{verification.score}%</strong><span className="small">Reproducibility</span></div>
+          </div>
+        </div>
+
+        <div className="panel">
+          <h2>6. Hypothesis Verification</h2>
+          <div className="list">
+            {verification.results.map((r) => (
+              <div className={r.reproduced ? 'item' : 'item warning'} key={r.token}>
+                <span>
+                  <b>{r.token}</b> → {r.meaning}
+                  <br />
+                  <span className="small">
+                    {r.reproduced ? 'Reproduced on comparison page.' : 'Contradiction: token not found on comparison page.'}
+                  </span>
+                </span>
+                <span className="score">{r.verificationScore}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="panel" style={{ marginTop: 18 }}>
+        <h2>7. Verified Candidate Rules</h2>
+        <p className="small">
+          Rules are only treated as candidates when they appear again on the comparison page.
+          A real confirmed translation would require the same rule system to work across many independent pages.
+        </p>
+        <div className="actions">
+          <button className="primary" onClick={exportJson}>Export JSON Research Log</button>
+          <button className="secondary" onClick={() => setComparisonText(evaText)}>Use Current Page as Reproduction Target</button>
+        </div>
+        <div className="list">
+          {verification.results.filter((r) => r.reproduced).map((r) => (
+            <div className="item" key={r.token}>
+              <span><b>{r.token}</b> → {r.meaning}</span>
+              <span className="score">Candidate</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <p className="footer">
+        Important: The Voynich Manuscript remains undeciphered. This site is a verification engine for experimental hypotheses, not a certified translation.
+      </p>
     </main>
-  )
+  );
 }
