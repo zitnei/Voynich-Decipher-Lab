@@ -1,27 +1,34 @@
-# Voynich Japanese Book Reader
+# Voynich Real Hypothesis Engine
 
-Book-style Voynich manuscript reader.
+A more research-oriented Voynich Japanese reader.
 
-## Features
+## What changed
 
-- left page: manuscript image
-- right page: Japanese hypothesis translation
-- previous / next page buttons
-- page number jump
-- six theory modes:
-  - Medieval Latin
-  - Old Italian
-  - Constructed language
-  - Encrypted Latin
-  - Compressed syllable language
-  - Hoax hypothesis
-- EVA candidate toggle
-- 214 manuscript images bundled
+This is not just template translation.
+It compares multiple hypotheses with transparent scores:
+
+- Medieval Latin
+- Old Italian
+- Encrypted Latin
+- Compressed syllable language
+- Constructed language
+- Hoax hypothesis
+
+Each page receives:
+
+- hypothesis score
+- mapped-token ratio
+- structure score
+- Zipf score
+- best hypothesis auto-selection
+- Japanese hypothesis translation
+- intermediate representation
+- clickable token zoom
 
 ## Important
 
 This is not a confirmed translation.
-It is a Japanese hypothesis reader generated from visual analysis and theory templates.
+It is a research engine for comparing translation hypotheses.
 
 ## Run
 

@@ -1,8 +1,8 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'Voynich Japanese Book Reader',
-  description: 'Book-style Voynich manuscript reader with Japanese hypothesis translations.'
+  title: 'Voynich Real Hypothesis Engine',
+  description: 'Hypothesis-scored Japanese reading engine for the Voynich Manuscript.'
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
