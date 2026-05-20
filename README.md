@@ -1,19 +1,20 @@
 # Voynich Decipher Lab
 
-AI-assisted research platform for analyzing and testing hypotheses related to the Voynich Manuscript.
+Free, browser-only research tool for testing hypotheses about the Voynich Manuscript.
 
-This project does **not** claim a confirmed translation. The Voynich Manuscript remains undeciphered. This app is a reproducible hypothesis engine.
+No OpenAI API key is required.  
+All analysis runs in the user's browser using JavaScript, Canvas, EVA-like token rules, word frequency analysis, cross-page comparison, and rule-based hypothesis generation.
 
-## Production Features
+## Features
 
-1. Manuscript image upload
-2. Browser-side visual analysis
-3. Provisional EVA-style conversion
-4. Word frequency analysis
-5. Cross-page comparison
-6. Translation rule generation
-7. Hypothesis verification
-8. Reproduction testing on another page
+- Manuscript image upload
+- Browser-side visual analysis
+- EVA-like transcription assistance
+- Word frequency analysis
+- Cross-page comparison using localStorage
+- Translation rule generation
+- Hypothesis verification
+- Reproduction test on another page
 
 ## Local Development
 
@@ -30,8 +31,9 @@ http://localhost:3000
 
 ## Deploy
 
-This is a standard Next.js app and can be deployed to Vercel.
+Push to GitHub. Vercel will redeploy automatically.
 
 ## Important Notice
 
-Generated interpretations are speculative research outputs, not verified translations.
+The Voynich Manuscript remains undeciphered.  
+This app does not provide confirmed translations. It generates testable hypotheses and reproducibility scores.

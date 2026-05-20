@@ -1,15 +1,14 @@
-import './globals.css';
-import type { Metadata } from 'next';
+import './globals.css'
 
-export const metadata: Metadata = {
+export const metadata = {
   title: 'Voynich Decipher Lab',
-  description: 'AI-style hypothesis and pattern analysis tool for the Voynich Manuscript.'
-};
+  description: 'Free browser-based Voynich manuscript hypothesis analysis lab',
+}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ja">
       <body>{children}</body>
     </html>
-  );
+  )
 }
