@@ -1,50 +1,35 @@
-# Voynich Scientific Decipherment Platform
+# Voynich Japanese Book Reader
 
-A reproducible research platform for testing whether proposed Voynich translation rules remain consistent across independent manuscript pages.
-
-This project does **not** claim a confirmed translation.  
-It is designed to move toward a scientifically testable decipherment workflow:
-
-- propose translation rules
-- apply them to independent pages
-- detect contradictions
-- calculate reproducibility
-- export JSON research logs
-- generate a paper-style report
+Book-style Voynich manuscript reader.
 
 ## Features
 
-- Manuscript image upload
-- Browser-based visual analysis
-- EVA-like token generation
-- Word frequency analysis
-- Cross-page comparison
-- Translation rule generation
-- Hypothesis verification
-- Reproducibility scoring
-- Contradiction detection
-- Falsifiability checklist
-- Paper-style research report export
-- JSON research log export
+- left page: manuscript image
+- right page: Japanese hypothesis translation
+- previous / next page buttons
+- page number jump
+- six theory modes:
+  - Medieval Latin
+  - Old Italian
+  - Constructed language
+  - Encrypted Latin
+  - Compressed syllable language
+  - Hoax hypothesis
+- EVA candidate toggle
+- 214 manuscript images bundled
 
-## Local Development
+## Important
+
+This is not a confirmed translation.
+It is a Japanese hypothesis reader generated from visual analysis and theory templates.
+
+## Run
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open:
+## Deploy
 
-```txt
-http://localhost:3000
-```
-
-## Deployment
-
-Push to GitHub. If connected to Vercel, production redeploys automatically.
-
-## Research Notice
-
-The Voynich Manuscript remains undeciphered.  
-This tool is an experimental verification platform, not a certified translation system.
+Push to GitHub. Vercel redeploys automatically.
